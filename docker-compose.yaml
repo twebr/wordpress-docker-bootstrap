@@ -1,0 +1,61 @@
+# Based on https://www.codeconcisely.com/posts/docker-wordpress/
+# Modification: use MariaDB instead of MySQL
+# Modification: explicitly set WP_HOME and WP_SITEURL; see https://www.cloudytuts.com/tutorials/docker/how-to-solve-wordpress-redirects-to-localhost-8080/
+# Modification: add WP-CLI; see https://mklasen.com/adding-and-using-wp-cli-in-a-docker-compose-setup/
+#
+# Note that this file reads out the .env file in this direcotry
+
+services:
+  wordpress:
+    container_name: ${NAME}-wp
+    depends_on:
+      - database
+    image: wordpress:latest
+    ports:
+      - 80:80
+    environment:
+      WORDPRESS_DB_HOST: '${MARIADB_HOST}'
+      WORDPRESS_DB_NAME: '${MARIADB_DATABASE}'
+      WORDPRESS_DB_USER: '${MARIADB_USER}'
+      WORDPRESS_DB_PASSWORD: '${MARIADB_PASSWORD}'
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', '${SITEURL}');
+        define('WP_SITEURL', '${SITEURL}');
+    volumes:
+      - ./wordpress:/var/www/html
+
+  database:
+    container_name: ${NAME}-db
+    image: mariadb:latest
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: '${MARIADB_ROOT_PASSWORD}'
+      MARIADB_DATABASE: '${MARIADB_DATABASE}'
+      MARIADB_USER: '${MARIADB_USER}'
+      MARIADB_PASSWORD: '${MARIADB_PASSWORD}'
+    volumes:
+      - ./db:/var/lib/mysql
+
+  wpcli:
+    container_name: ${NAME}-cli
+    image: wordpress:cli
+    depends_on:
+      - wordpress
+    command: tail -f /dev/null
+    environment:
+      WORDPRESS_DB_HOST: '${MARIADB_HOST}'
+      WORDPRESS_DB_NAME: '${MARIADB_DATABASE}'
+      WORDPRESS_DB_USER: '${MARIADB_USER}'
+      WORDPRESS_DB_PASSWORD: '${MARIADB_PASSWORD}'
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', '${SITEURL}');
+        define('WP_SITEURL', '${SITEURL}');
+    volumes:
+      - ./wordpress:/var/www/html
+
+volumes:
+  wordpress:
+  db:

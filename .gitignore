@@ -1,0 +1,4 @@
+/db
+/wordpress
+.env
+.DS_Store
